@@ -19,6 +19,9 @@ class Chess:
         self.chess_board[end] = self.chess_board[start]
         self.chess_board[start] = 'o'
     
+    def colShift(self, c, inc):
+        return chr(ord(c)+inc)
+    
     def printBoard(self):
         for row in range(8, 0, -1):
             for col in range(8):
@@ -78,7 +81,7 @@ class Chess:
             legalMoves = self.kingMoves(start, color)
         
         return end in legalMoves
-   
+    
     def pawnMoves(self, start, color):
         legal_moves = set()
         start_col, start_row = start[0], start[1]
@@ -119,7 +122,7 @@ class Chess:
 
         #add moves to the left
         for i in range(1, left_distance):
-            col = chr(ord(start[0])-i)
+            col = self.colShift(start[0], -i)
             pos = (col, start[1])
             if self.chess_board[pos] == 'o':
                 legal_moves.add(pos)
@@ -131,7 +134,7 @@ class Chess:
         
         #add moves to right
         for i in range(1, right_distance):
-            col = chr(ord(start[0])+i)
+            col = self.colShift(start[0], i)
             pos = (col, start[1])
             if self.chess_board[pos] == 'o':
                 legal_moves.add(pos)
@@ -169,13 +172,27 @@ class Chess:
         return legal_moves
 
     def bishopMoves(self, start, color):
-        return True
+        legal_moves = set()
+        return legal_moves
     
     def knightMoves(self, start, color):
-        position_pairs = [(-2, 1), (-2, 1), (-1, 2), (-1, -2), (1, -2), (1, 2), (2, -1), (2, 1)]
-        for pair in position_pairs:
-            
-        return True
+        legal_moves = set()
+        position_pairs = [(-2, 1), (-2, -1), (-1, 2), (-1, -2), (1, -2), (1, 2), (2, -1), (2, 1)] #list of possible knight move distances
+        for (x, y) in position_pairs:
+            pos = (self.colShift(start[0], x), start[1]+y)
+            if x > 0 and self.columns.index(start[0]) >= x: #if there's enough column space, positives only, or left
+                if y > 0 and (8-start[1]) >= y: #if there's enough row space, positives only, or up
+                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
+                elif y < 0 and start[1] >= -y: #if there's enough space on the bottom of the piece
+                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
+            elif x < 0 and self.columns.index(start[0]) >= -x: #same thing for -x, or right of piece
+                if y > 0 and (8-start[1]) >= y:
+                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
+                elif y < 0 and start[1] >= -y:
+                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
+        
+        print(legal_moves)
+        return legal_moves
 
     def queenMoves(self, start, color):
         return self.bishopMoves(start, color) + self.rookMoves(start, color)
