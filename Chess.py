@@ -14,10 +14,18 @@ class Chess:
         self.columns = 'abcdefgh'
         self.rows = '12345678'
         self.turn = 'w'
+        self.white_king_pos = ('e', 1)
+        self.black_king_pos = ('e', 8)
     
-    def move(self, start, end):
-        self.chess_board[end] = self.chess_board[start]
-        self.chess_board[start] = 'o'
+    def move(self, start, end, board):
+        if self.chess_board[start][0] == self.turn:
+            if self.chess_board[start][1] == 'k':
+                if self.turn == 'w':
+                    self.white_king_pos = end
+                else:
+                    self.black_king_pos = end
+        board[end] = board[start]
+        board[start] = 'o'
     
     def colShift(self, c, inc):
         return chr(ord(c)+inc)
@@ -32,14 +40,13 @@ class Chess:
     def validInput(self, start, end):
         start, end = start.lower(), end.lower()
         #string must be length of 2
-        if len(start) != len(end) != 2:
-            return False
+        if(len(start) != len(end) != 2      
         #first char must be alpha in chess notation
-        elif start[0] not in self.columns or end[0] not in self.columns:
-            return False
+        or start[0] not in self.columns or end[0] not in self.columns
         #second char must be num 1-8
-        elif start[1] not in self.rows or end[1] not in self.rows:
+        or start[1] not in self.rows or end[1] not in self.rows):
             return False
+        
         else:
             return True
     
@@ -62,61 +69,69 @@ class Chess:
         if start == end:
             print('same position') 
             return False
+        
+        pieces, moves = self.getAllMoves(color)
+        return end in self.getValidMoves(moves, pieces)
 
+    def legalMoves(self, start, color):
         #check piece move legality
         startPiece = self.chess_board[start][1]
 
-        legalMoves = set()
+        legal_moves = []
         if startPiece == 'p':
-            legalMoves = self.pawnMoves(start, color)
+            legal_moves = self.pawnMoves(start, color)
         elif startPiece == 'r':
-            legalMoves = self.rookMoves(start, color)
+            legal_moves = self.rookMoves(start, color)
         elif startPiece == 'b':
-            legalMoves = self.bishopMoves(start, color)
+            legal_moves = self.bishopMoves(start, color)
         elif startPiece == 'n':
-            legalMoves = self.knightMoves(start, color)
+            legal_moves = self.knightMoves(start, color)
         elif startPiece == 'q':
-            legalMoves = self.queenMoves(start, color)
+            legal_moves = self.queenMoves(start, color)
         elif startPiece == 'k':
-            legalMoves = self.kingMoves(start, color)
+            legal_moves = self.kingMoves(start, color)
         
-        return end in legalMoves
+
+        return legal_moves
     
     def pawnMoves(self, start, color):
-        legal_moves = set()
+        legal_moves = []
         start_col, start_row = start[0], start[1]
         start_col_index = self.columns.index(start_col)
         #white and black different conditions
         if color == 'w':
-            #if one space forward is open add to set
-            
+            #if one space forward is open add to set            
             if self.chess_board[(start_col, start_row+1)] == 'o':
-                legal_moves.add((start_col, start_row+1))
+                legal_moves.append((start_col, start_row+1))
                 #given one space open, if two spaces is open and starts at 2, add to set
-                if self.chess_board[(start_col, start_row+2)] == 'o' and start_row == 2: legal_moves.add((start_col, start_row+2)) 
+                if self.chess_board[(start_col, start_row+2)] == 'o' and start_row == 2: legal_moves.append((start_col, start_row+2)) 
             
             #diagonals are black pieces that can be taken
-            if self.chess_board[(self.columns[start_col_index+1], start_row+1)][0] == 'b': legal_moves.add((self.columns[start_col_index+1], start_row+1))
-            if self.chess_board[(self.columns[start_col_index-1], start_row+1)][0] == 'b': legal_moves.add((self.columns[start_col_index-1], start_row+1))
+            if start_col_index < 7:
+                if self.chess_board[(self.columns[start_col_index+1], start_row+1)][0] == 'b': legal_moves.append((self.columns[start_col_index+1], start_row+1))
+            if start_col_index > 0:
+                if self.chess_board[(self.columns[start_col_index-1], start_row+1)][0] == 'b': legal_moves.append((self.columns[start_col_index-1], start_row+1))
         
         else:
             #if one space forward is open add to set
             if self.chess_board[(start_col, start_row-1)] == 'o':
-                legal_moves.add((start_col, start_row-1))
+                legal_moves.append((start_col, start_row-1))
                 #given one space open, if two spaces is open and starts at 2, add to set
-                if self.chess_board[(start_col, start_row-2)] == 'o' and start_row == 7: legal_moves.add((start_col, start_row-2)) 
+                if self.chess_board[(start_col, start_row-2)] == 'o' and start_row == 7: legal_moves.append((start_col, start_row-2)) 
             
             #diagonals are white pieces that can be taken
-            if self.chess_board[(self.columns[start_col_index-1], start_row-1)][0] == 'w': legal_moves.add((self.columns[start_col_index-1], start_row-1))
-            if self.chess_board[(self.columns[start_col_index+1], start_row-1)][0] == 'w': legal_moves.add((self.columns[start_col_index+1], start_row-1))
+            if start_col_index < 7:
+                if self.chess_board[(self.columns[start_col_index-1], start_row-1)][0] == 'w': legal_moves.append((self.columns[start_col_index-1], start_row-1))
+            if start_col_index > 0:
+                if self.chess_board[(self.columns[start_col_index+1], start_row-1)][0] == 'w': legal_moves.append((self.columns[start_col_index+1], start_row-1))
 
-        print(legal_moves)
+        print("Pawn: ", legal_moves)
         return legal_moves
         
     def rookMoves(self, start, color):
-        legal_moves = set()
-        left_distance = self.columns.index(start[0])
-        right_distance = 8-left_distance
+        legal_moves = []
+        left_distance = self.columns.index(start[0])+1
+        right_distance = 9-left_distance
         down_distance = start[1]
         up_distance = 9-start[1]
 
@@ -125,9 +140,9 @@ class Chess:
             col = self.colShift(start[0], -i)
             pos = (col, start[1])
             if self.chess_board[pos] == 'o':
-                legal_moves.add(pos)
+                legal_moves.append(pos)
             elif self.chess_board[pos][0] != color:
-                legal_moves.add(pos)
+                legal_moves.append(pos)
                 break
             else:
                 break
@@ -137,9 +152,9 @@ class Chess:
             col = self.colShift(start[0], i)
             pos = (col, start[1])
             if self.chess_board[pos] == 'o':
-                legal_moves.add(pos)
+                legal_moves.append(pos)
             elif self.chess_board[pos][0] != color:
-                legal_moves.add(pos)
+                legal_moves.append(pos)
                 break
             else:
                 break
@@ -149,9 +164,9 @@ class Chess:
             row = start[1]+i
             pos = (start[0], row)
             if self.chess_board[pos] == 'o':
-                legal_moves.add(pos)
+                legal_moves.append(pos)
             elif self.chess_board[pos][0] != color:
-                legal_moves.add(pos)
+                legal_moves.append(pos)
                 break
             else:
                 break
@@ -161,49 +176,116 @@ class Chess:
             row = start[1]-i
             pos = (start[0], row)
             if self.chess_board[pos] == 'o':
-                legal_moves.add(pos)
+                legal_moves.append(pos)
             elif self.chess_board[pos][0] != color:
-                legal_moves.add(pos)
+                legal_moves.append(pos)
                 break
             else:
                 break
         
-        print(legal_moves)
+        print("Rook: ", legal_moves)
         return legal_moves
 
     def bishopMoves(self, start, color):
-        legal_moves = set()
+        legal_moves = []
+        left_distance = self.columns.index(start[0])+1
+        right_distance = 9-left_distance
+        down_distance = start[1]
+        up_distance = 9-start[1]
+
+        for i in range(1, min(left_distance, down_distance)): #left-down diagonal
+            pos = (self.colShift(start[0], -i), start[1]-i)
+            if self.chess_board[pos] == 'o':
+                legal_moves.append(pos)
+            elif self.chess_board[pos][0] != color:
+                legal_moves.append(pos)
+                break
+            else:
+                break
+        
+        for i in range(1, min(right_distance, down_distance)): #right-down diagonal
+            pos = (self.colShift(start[0], i), start[1]-i)
+            if self.chess_board[pos] == 'o':
+                legal_moves.append(pos)
+            elif self.chess_board[pos][0] != color:
+                legal_moves.append(pos)
+                break
+            else:
+                break
+
+        for i in range(1, min(right_distance, up_distance)): #right-up diagonal
+            pos = (self.colShift(start[0], i), start[1]+i)
+            if self.chess_board[pos] == 'o':
+                legal_moves.append(pos)
+            elif self.chess_board[pos][0] != color:
+                legal_moves.append(pos)
+                break
+            else:
+                break
+        
+        for i in range(1, min(left_distance, up_distance)): #left-up diagonal
+            pos = (self.colShift(start[0], -i), start[1]+i)
+            if self.chess_board[pos] == 'o':
+                legal_moves.append(pos)
+            elif self.chess_board[pos][0] != color:
+                legal_moves.append(pos)
+                break
+            else:
+                break
+
+        print("Bishop: ", legal_moves)
         return legal_moves
     
     def knightMoves(self, start, color):
-        legal_moves = set()
+        legal_moves = []
         position_pairs = [(-2, 1), (-2, -1), (-1, 2), (-1, -2), (1, -2), (1, 2), (2, -1), (2, 1)] #list of possible knight move distances
         for (x, y) in position_pairs:
             pos = (self.colShift(start[0], x), start[1]+y)
-            if x > 0 and self.columns.index(start[0]) >= x: #if there's enough column space, positives only, or left
-                if y > 0 and (8-start[1]) >= y: #if there's enough row space, positives only, or up
-                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
-                elif y < 0 and start[1] >= -y: #if there's enough space on the bottom of the piece
-                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
-            elif x < 0 and self.columns.index(start[0]) >= -x: #same thing for -x, or right of piece
-                if y > 0 and (8-start[1]) >= y:
-                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
-                elif y < 0 and start[1] >= -y:
-                    if self.chess_board[pos][0] != color: legal_moves.add(pos)
+            if pos[0] in self.columns and 0 < pos[1] < 9:
+                if self.chess_board[pos][0] != color: legal_moves.append(pos)
         
-        print(legal_moves)
+        print("Knight: ", legal_moves)
         return legal_moves
 
     def queenMoves(self, start, color):
         return self.bishopMoves(start, color) + self.rookMoves(start, color)
     
-    def kingMoves(self, start, end, color):
+    def kingMoves(self, start, color):
+        legal_moves = []
+        position_pairs = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)]
+        for (x, y) in position_pairs:
+            pos = (self.colShift(start[0], x), start[1]+y)
+            if pos[0] in self.columns and 0 < pos[1] < 9:
+                if self.chess_board[pos][0] != color: legal_moves.append(pos)
+        print("King: ", legal_moves)
         return True
+    
+    def getAllMoves(self, color):
+        moves = []
+        pieces = []
+        for col in self.columns:
+            for row in range(1,9):
+                if self.chess_board[(col, row)][0] == color:
+                    moves.append(self.legalMoves((col, row), color))
+                    pieces.append((col, row))
         
-    def startGame(self):
-        print("Welcome to Chess")
+        print("Pieces: ", pieces)
+        print("Moves: ", moves)
+        return pieces, moves
+    
+    def getValidMoves(self, moves, pieces):
+        valid_moves = []
+        for i in range(len(pieces)):
+            for move in moves[i]:
+                board_copy = self.chess_board
+                self.move(pieces[i], move, board_copy)
+                if not self.inCheck(self.turn, board_copy):
+                    valid_moves.append(move)
+        return valid_moves
+
+    def startGame(self):        
         self.printBoard()
-        while(not self.isWon()):
+        while(not self.isCheckmate()):
             while(True):
                 while(True):
                     #check for valid inputs
@@ -225,14 +307,32 @@ class Chess:
                 else:
                     print("That move is not legal, please try again.")
             
-            self.move(start, end)
+            self.move(start, end, self.chess_board)
             self.printBoard()
             if self.turn == 'w':
                 self.turn = 'b'
             else:
-                self.turn = 'w' 
-        
-    def isWon(self):
+                self.turn = 'w'
+
+        if(self.turn == 'w'):
+            print("White Wins")
+        else:
+            print("Black Wins") 
+
+    def inCheck(self, color, board):
+        for col in self.columns: #check if king is currently in check
+            for row in range(1,9):
+                if board[(col, row)][0] != color and board[(col, row)][0] != 'o':
+                    if color == 'w' and (self.white_king_pos in self.legalMoves((col, row), color)): #if king pos in possible moves for opposing color piece, you are in check
+                        return True
+                    elif color == 'b' and (self.black_king_pos in self.legalMoves((col, row), color)):
+                        return True
+        return False
+
+    def isCheckmate(self):
+        if self.kingMoves(self.white_king_pos, self.turn) == []:
+            if self.inCheck:
+                return True
         return False
 
         
