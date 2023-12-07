@@ -50,7 +50,7 @@ class Board:
             for r in self.rows:
                 self.squares[(c, r)] = Square(c, r)
                 square = self.squares[(c, r)]
-                if self.chess_board[c, r][0] != "o":
+                if self.chess_board[(c, r)][0] != "o":
                     color = self.chess_board[(c, r)][0]
                     type = self.chess_board[(c, r)][1]
 

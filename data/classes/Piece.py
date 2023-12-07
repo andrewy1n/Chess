@@ -9,9 +9,9 @@ class Piece:
         prev_square.occupying_piece = None
         square.occupying_piece = self
 
-    def getMoves(self) -> list:
+    def getMoves(self, board) -> list:
         output = []
-        for square in self.getPossibleMoves():
+        for square in self.getPossibleMoves(board):
             if square.occupying_piece is not None:
                 if square.occupying_piece.color == self.color:
                     break
@@ -28,3 +28,6 @@ class Piece:
             if not board.isInCheck(self.color, board_change = [self.pos, square.pos]):
                 output.append(square)
         return output
+    
+    def columnShift(self, col: str, shift: int) -> str:
+        return chr(ord(col)+shift)
