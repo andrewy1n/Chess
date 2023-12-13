@@ -3,13 +3,13 @@ class Piece:
         self.color = color
         self.pos = pos
     
-    def move(self, square, board) -> None:
-        prev_square = board.squares[self.pos]
-        self.pos = (square.c, square.r)
+    def move(self, square, board: dict) -> None:
+        prev_square = board[self.pos]
         prev_square.occupying_piece = None
+        self.pos = (square.c, square.r)
         square.occupying_piece = self
 
-    def getMoves(self, board) -> list:
+    def getMoves(self, board: dict) -> list:
         output = []
         for square in self.getPossibleMoves(board):
             if square.occupying_piece is not None:
@@ -22,7 +22,7 @@ class Piece:
                 output.append(square)
         return output
     
-    def getValidMoves(self, board) -> list:
+    def getValidMoves(self, board: dict) -> list:
         output = []
         for square in self.getMoves(board):
             if not board.isInCheck(self.color, board_change = [self.pos, square.pos]):
