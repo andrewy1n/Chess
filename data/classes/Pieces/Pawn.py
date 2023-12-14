@@ -22,15 +22,15 @@ class Pawn(Piece):
                 output.append(board.squares[(self.pos[0], self.pos[1]+2*cm)]) 
         
         #diagonals are black pieces that can be taken
-        if (self.pos[0] < 'h'
+        if (ord(self.pos[0]) < ord('h') #right
             and board.squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)].occupying_piece is not None 
             and board.squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)].occupying_piece.color != self.color): 
             output.append(board.squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)])
         
-        if (self.pos[0] > 'a'
+        if (ord(self.pos[0]) > ord('a') #left
             and board.squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)].occupying_piece is not None
             and board.squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)].occupying_piece.color != self.color): 
-            output.append(board.squares[(super().columnShift(self.pos[0], -1*cm), self.pos[1]+1*cm)])
+            output.append(board.squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)])
         
         #en passant
         pawn_row = 5
@@ -46,5 +46,4 @@ class Pawn(Piece):
                 and abs(pawn_dist) == 1):
                 output.append(board.squares[(super().columnShift(self.pos[0], pawn_dist), self.pos[1]+1*cm)])
 
-        
         return output
