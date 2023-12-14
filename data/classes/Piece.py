@@ -1,13 +1,16 @@
+from copy import deepcopy
 class Piece:
-    def __init__(self, color, pos) -> None:
+    def __init__(self, color: str, pos: tuple) -> None:
         self.color = color
         self.pos = pos
     
-    def move(self, square, board: dict) -> None:
-        prev_square = board[self.pos]
+    def move(self, to_pos: tuple, board) -> None:
+        prev_square = board.squares[self.pos]
         prev_square.occupying_piece = None
-        self.pos = (square.c, square.r)
-        square.occupying_piece = self
+        self.pos = to_pos
+        board.squares[to_pos].occupying_piece = self
+
+        board.moves.append([self.color, prev_square, board.squares[to_pos], deepcopy(board.squares)])
 
     def getMoves(self, board: dict) -> list:
         output = []

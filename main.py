@@ -6,15 +6,10 @@ def validInput(inputPos) -> bool:
     return
 
 if __name__ == '__main__':
-    board.squares[('f', 1)].occupying_piece = None
-    board.squares[('g', 1)].occupying_piece = None
-    board.squares[('d', 1)].occupying_piece = None
-    board.squares[('c', 1)].occupying_piece = None
-    board.squares[('b', 1)].occupying_piece = None
     board.printBoard()
 
-    for pos in board.squares:
-        square = board.squares.get(pos)
+    for square in board.squares.values():
         piece = square.occupying_piece
-        if piece is not None:            
-           print(piece.color + piece.notation + ': ' + str(piece.getPossibleMoves(board.squares)))
+        if piece is not None:
+            print(piece.color + piece.notation)
+            print([(sq.c, sq.r) for sq in piece.getPossibleMoves(board)])

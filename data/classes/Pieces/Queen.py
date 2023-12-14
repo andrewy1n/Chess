@@ -16,14 +16,14 @@ class Queen(Piece):
             curC = super().columnShift(self.pos[0], dc)
             while((curR in range(1, 9)) #append open squares
                 and curC in 'abcdefgh'
-                and board[(curC, curR)].occupying_piece is None):
-                output.append((curC, curR))
+                and board.squares[(curC, curR)].occupying_piece is None):
+                output.append(board.squares[(curC, curR)])
                 curR = curR + dr
                 curC = super().columnShift(curC, dc)
             
             if (curR in range(1, 9)
                 and curC in 'abcdefgh' 
-                and board[(curC, curR)].occupying_piece.color != self.color): #append attacking squares
-                output.append((curC, curR))
+                and board.squares[(curC, curR)].occupying_piece.color != self.color): #append attacking squares
+                output.append(board.squares[(curC, curR)])
 
         return output
