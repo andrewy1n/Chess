@@ -5,5 +5,17 @@ class Knight(Piece):
         self.notation = "N"
 
 
-    def getPossibleMoves(self) -> list:
-        return
+    def getPossibleMoves(self, board: dict) -> list:
+        output = []
+        directions = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
+        
+        for dc, dr in directions:
+            curR = self.pos[1] + dr
+            curC = super().columnShift(self.pos[0], dc)
+            if ((curR in range(1, 9))
+                and curC in 'abcdefgh'
+                and (board[(curC, curR)].occupying_piece is None
+                or board[(curC, curR)].occupying_piece.color != self.color)):
+                output.append((curC, curR))
+            
+        return output
