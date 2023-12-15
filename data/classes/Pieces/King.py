@@ -22,20 +22,20 @@ class King(Piece):
         
         if(not self.has_moved):
             rookRow = self.pos[1]
-            
+
             #king side castling
             if (board.squares[('h', rookRow)].occupying_piece.notation == 'R'
                 and not board.squares[('h', rookRow)].occupying_piece.has_moved
-                and ('f', rookRow) in output
+                and board.squares[('f', rookRow)].occupying_piece is None
                 and board.squares[('g', rookRow)].occupying_piece is None):
                 output.append(board.squares[('g', rookRow)])
             
             #queen side castling
             if (board.squares[('a', rookRow)].occupying_piece.notation == 'R'
                 and not board.squares[('a', rookRow)].occupying_piece.has_moved
-                and ('d', rookRow) in output
                 and board.squares[('c', rookRow)].occupying_piece is None
-                and board.squares[('b', rookRow)].occupying_piece is None):
+                and board.squares[('b', rookRow)].occupying_piece is None
+                and board.squares[('d', rookRow)].occupying_piece is None):
                 output.append(board.squares[('c', rookRow)]) 
         
         return output

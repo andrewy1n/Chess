@@ -68,67 +68,52 @@ class Board:
                     elif type == "k":
                         square.occupying_piece = King(color, (c, r))
 
-    def isInCheck(self, color, board_change=None) -> bool:
-        #Board changes are for validating chess board move, otherwise board state checker
-        output = False
+    def isInCheck(self, color: str, dummy_board) -> bool:
 
         king_pos = None
-        prev_square_piece = None
-        new_square_piece = None
-
-        if board_change is not None: #board change, swap prev and new
-            prev_square = self.squares[board_change[0]]
-            new_square = self.squares[board_change[1]]
-            prev_square_piece = prev_square.occupying_piece
-            new_square_piece = new_square.occupying_piece
-            new_square.occupying_piece = prev_square_piece
-            prev_square.occupying_piece = new_square_piece
         
-        pieces = [
-            s.occupying_piece for s in self.squares.values() if s.occupying_piece
-        ]
-
-        for piece in pieces: #find king position
-            if piece.color == color and piece.notation == "K":
-                king_pos = piece.pos
+        for pos in dummy_board.squares: #find king position
+            if dummy_board.squares[pos].occupying_piece is not None:
+                piece = dummy_board.squares[pos].occupying_piece
+                if piece.color == color and piece.notation == 'K':
+                    king_pos = pos
         
+        pieces = [s.occupying_piece for s in dummy_board.squares.values() if s.occupying_piece is not None]
         for piece in pieces:
-            for move in piece.getPossibleMoves():
-                if self.color != color and move.pos == king_pos: #opposing piece can attack king
-                    output = True
+            if piece.color == color:
+                continue
+            
+            for square in piece.getPossibleMoves(dummy_board):
+                if(square.c == king_pos[0] and square.r == king_pos[1]): #opposing piece can attack king
+                    return True
         
-        if board_change is not None: #swap positions back if board change
-            prev_square.occupying_piece = prev_square_piece
-            new_square.occupying_piece = new_square_piece
-        
-        return output
+        return False
 
     def isCheckMate(self, color) -> bool:
+        possibleMoves = []
         for square in self.squares.values():
             piece = square.occupying_piece
-            if (piece != None and 
-                piece.notation == 'K' and 
-                piece.color == color):
-                king = piece
-    
-        return king.getValidMoves() == [] and self.isInCheck()
+            if(piece is not None and piece.color == color):
+                possibleMoves.extend(piece.getValidMoves(self))
+            
+        return len(possibleMoves) == 0 and self.isInCheck(color, self)
 
     
     def isStaleMate(self) -> bool:
+        whiteMoves = []
+        blackMoves = []
         for square in self.squares.values():
             piece = square.occupying_piece
-            if piece != None and piece.notation == 'K':
+            if piece != None:
                 if piece.color == 'w':
-                    white_king = piece
+                    whiteMoves.extend(piece.getValidMoves(self))
                 else:
-                    black_king = piece
+                    blackMoves.extend(piece.getValidMoves(self))
 
-        return (white_king.getValidMoves() == [] and 
-                black_king.getValidMoves() == [] and 
-                not self.isInCheck())
+        return len(whiteMoves) == len(blackMoves) == 0
 
     def printBoard(self) -> None:
-        for row in self.rows:
+        for row in self.rows[::-1]:
             for col in self.columns:
                 piece = self.squares[(col, row)].occupying_piece
                 print(piece.color + piece.notation, end=' ') if piece else print('-', end = '  ')
