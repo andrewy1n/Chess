@@ -6,6 +6,8 @@ from data.classes.Pieces.Queen import Queen
 from data.classes.Pieces.King import King
 from data.classes.Pieces.Pawn import Pawn
 from collections import defaultdict
+from copy import deepcopy
+import pygame
 
 
 class Board:
@@ -13,7 +15,9 @@ class Board:
         self.squares = defaultdict(Square)
         self.columns = "abcdefgh"
         self.rows = list(range(1, 9))
-        self.moves = [] #[color, fromSquare, toSquare, currBoard(COPY)]
+        self.moves = [] #[color, fromSquare, toSquare, curr_squares]
+        self.turn = 'w'
+        self.highlighted_square = None
 
         self.chess_board_config = self.generateBoard()
 
@@ -68,35 +72,35 @@ class Board:
                     elif type == "k":
                         square.occupying_piece = King(color, (c, r))
 
-    def isInCheck(self, color: str, dummy_board) -> bool:
+    def isInCheck(self, color: str, dummy_squares: dict) -> bool:
 
         king_pos = None
         
-        for pos in dummy_board.squares: #find king position
-            if dummy_board.squares[pos].occupying_piece is not None:
-                piece = dummy_board.squares[pos].occupying_piece
+        for pos in dummy_squares: #find king position
+            if dummy_squares[pos].occupying_piece is not None:
+                piece = dummy_squares[pos].occupying_piece
                 if piece.color == color and piece.notation == 'K':
                     king_pos = pos
         
-        pieces = [s.occupying_piece for s in dummy_board.squares.values() if s.occupying_piece is not None]
+        pieces = [s.occupying_piece for s in dummy_squares.values() if s.occupying_piece is not None]
         for piece in pieces:
             if piece.color == color:
                 continue
             
-            for square in piece.getPossibleMoves(dummy_board):
+            for square in piece.getPossibleMoves(dummy_squares, self.moves):
                 if(square.c == king_pos[0] and square.r == king_pos[1]): #opposing piece can attack king
                     return True
         
         return False
 
-    def isCheckMate(self, color) -> bool:
+    def isCheckMate(self) -> bool:
         possibleMoves = []
         for square in self.squares.values():
             piece = square.occupying_piece
-            if(piece is not None and piece.color == color):
+            if(piece is not None and piece.color == self.turn):
                 possibleMoves.extend(piece.getValidMoves(self))
             
-        return len(possibleMoves) == 0 and self.isInCheck(color, self)
+        return len(possibleMoves) == 0 and self.isInCheck(self.turn, self.squares)
 
     
     def isStaleMate(self) -> bool:
@@ -118,3 +122,69 @@ class Board:
                 piece = self.squares[(col, row)].occupying_piece
                 print(piece.color + piece.notation, end=' ') if piece else print('-', end = '  ')
             print()
+    
+    def drawBoard(self, screen) -> None:
+        font = pygame.font.Font(None, 24)
+
+        for square in self.squares.values():
+            if square.is_highlighted:
+                pygame.draw.rect(screen, (255, 244, 79), square.tile)
+            else:
+                pygame.draw.rect(screen, square.color, square.tile)
+
+            if square.r == 1 or square.c == 'a':
+                letter_color = (2, 50, 37) if square.color == (255, 255, 255) else (255, 255, 255)
+                char = square.c.upper() if square.r == 1 else str(square.r)
+
+                letter = font.render(char, True, letter_color)
+                letter_rect = letter.get_rect() 
+                letter_rect.center = square.tile.center
+                if square.r == 1:
+                    letter_rect.x += square.tile.width / 2.7
+                    letter_rect.y += square.tile.width / 2.7
+                else:
+                    letter_rect.x -= square.tile.width / 2.7
+                    letter_rect.y -= square.tile.width / 2.7
+                
+                screen.blit(letter, letter_rect)
+            
+            if square.occupying_piece is not None:
+                piece = square.occupying_piece
+                piece_image = None
+                if piece.color == 'w':
+                    piece_image = pygame.image.load(piece.white_piece_image_path)
+                else:
+                    piece_image = pygame.image.load(piece.black_piece_image_path)
+                piece_image = pygame.transform.scale2x(piece_image)
+                tile_center = (square.tile.centerx - square.tile.width//2 + 5, square.tile.centery - square.tile.height//2)
+                screen.blit(piece_image, tile_center)
+            
+        if self.highlighted_square is not None:
+            for square in self.highlighted_square.occupying_piece.getValidMoves(self):  
+                pygame.draw.circle(screen, (0,0,0), square.tile.center, 20)
+        
+    def handle_click(self) -> None:
+        x, y = pygame.mouse.get_pos()
+        r = 8 - y//100
+        c = chr(x//100 + ord('a'))
+        square_selected =  self.squares[(c, r)]
+        piece_selected = square_selected.occupying_piece
+        
+        if(self.highlighted_square is not None):
+            highlighted_piece = self.highlighted_square.occupying_piece
+            highlighted_square_pos = (self.highlighted_square.c, self.highlighted_square.r)
+            if square_selected in highlighted_piece.getValidMoves(self):
+                self.squares = highlighted_piece.move((c, r), self.squares, permanent = True)
+                self.moves.append([deepcopy(self.turn), deepcopy(self.squares[highlighted_square_pos]), deepcopy(self.squares[(c, r)]), deepcopy(self.squares)])
+                self.turn = 'b' if self.turn == 'w' else 'w'
+                
+            self.squares[highlighted_square_pos].is_highlighted = False
+            self.highlighted_square = None
+        
+        elif piece_selected is not None and piece_selected.color == self.turn:
+            square_selected.is_highlighted = True
+            self.highlighted_square = square_selected
+            
+                
+        
+
