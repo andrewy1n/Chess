@@ -19,7 +19,7 @@ if __name__ == '__main__':
         board.drawBoard(screen)
 
         if board.isCheckMate():
-            if board.turn == 'w':
+            if board.turn != 'w':
                 print('White Wins')
             else:
                 print('Black Wins')

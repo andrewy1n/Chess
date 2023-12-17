@@ -8,20 +8,17 @@ class Pawn(Piece):
 
     def getPossibleMoves(self, squares, moves) -> list:
         output = []
-        cm = 1 #color positional modifier
         
-        #white and black different conditions
-        if self.color == 'b':
-            cm = -1
+        #white and black different conditions color positional modifier
+        cm = 1 if self.color != 'b' else -1
         
-        #if one space forward is open add to set
-        print(self.pos)            
-        if(self.pos[1]+1*cm in range(2,8) and 
+        #if one space forward is open add to set           
+        if(self.pos[1]+1*cm in range(1,9) and 
            squares[(self.pos[0], self.pos[1]+1*cm)].occupying_piece is None):
             output.append(squares[(self.pos[0], self.pos[1]+1*cm)])
             #given one space open, if two spaces is open and starts at 2, add to set
-            if((self.pos[1] == 2 and self.color == 'w') or 
-               (self.pos[1] == 7 and self.color == 'b') and
+            if(((self.pos[1] == 2 and self.color == 'w') or 
+               (self.pos[1] == 7 and self.color == 'b')) and
                 squares[(self.pos[0], self.pos[1]+2*cm)].occupying_piece is None): 
                 output.append(squares[(self.pos[0], self.pos[1]+2*cm)]) 
         

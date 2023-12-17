@@ -72,27 +72,26 @@ class Board:
                     elif type == "k":
                         square.occupying_piece = King(color, (c, r))
 
-    def isInCheck(self, color: str, dummy_squares: dict) -> bool:
-
+    def isInCheck(self, color: str, squares: dict) -> bool:
         king_pos = None
         
-        for pos in dummy_squares: #find king position
-            if dummy_squares[pos].occupying_piece is not None:
-                piece = dummy_squares[pos].occupying_piece
+        for pos in squares: #find king position
+            if squares[pos].occupying_piece is not None:
+                piece = squares[pos].occupying_piece
                 if piece.color == color and piece.notation == 'K':
                     king_pos = pos
         
-        pieces = [s.occupying_piece for s in dummy_squares.values() if s.occupying_piece is not None]
-        for piece in pieces:
-            if piece.color == color:
-                continue
-            
-            for square in piece.getPossibleMoves(dummy_squares, self.moves):
-                if(square.c == king_pos[0] and square.r == king_pos[1]): #opposing piece can attack king
-                    return True
-        
+        return self.isAttacked(color, king_pos, squares)
+    
+    def isAttacked(self, color: str, pos: tuple, squares: dict) -> bool:
+        for square in squares.values():
+            piece = square.occupying_piece
+            if piece is not None and piece.color != color:
+                for attacked_square in piece.getPossibleMoves(squares, self.moves):
+                    if(attacked_square.c == pos[0] and attacked_square.r == pos[1]):
+                        return True   
         return False
-
+    
     def isCheckMate(self) -> bool:
         possibleMoves = []
         for square in self.squares.values():
@@ -114,7 +113,7 @@ class Board:
                 else:
                     blackMoves.extend(piece.getValidMoves(self))
 
-        return len(whiteMoves) == len(blackMoves) == 0
+        return len(whiteMoves) == 0 or len(blackMoves) == 0
 
     def printBoard(self) -> None:
         for row in self.rows[::-1]:
@@ -132,19 +131,27 @@ class Board:
             else:
                 pygame.draw.rect(screen, square.color, square.tile)
 
-            if square.r == 1 or square.c == 'a':
+            if square.r == 1:
                 letter_color = (2, 50, 37) if square.color == (255, 255, 255) else (255, 255, 255)
-                char = square.c.upper() if square.r == 1 else str(square.r)
+                char = square.c.upper()
 
                 letter = font.render(char, True, letter_color)
                 letter_rect = letter.get_rect() 
                 letter_rect.center = square.tile.center
-                if square.r == 1:
-                    letter_rect.x += square.tile.width / 2.7
-                    letter_rect.y += square.tile.width / 2.7
-                else:
-                    letter_rect.x -= square.tile.width / 2.7
-                    letter_rect.y -= square.tile.width / 2.7
+                letter_rect.x += square.tile.width / 2.7
+                letter_rect.y += square.tile.width / 2.7
+                
+                screen.blit(letter, letter_rect)
+            
+            if square.c == 'a':
+                letter_color = (2, 50, 37) if square.color == (255, 255, 255) else (255, 255, 255)
+                char = str(square.r)
+
+                letter = font.render(char, True, letter_color)
+                letter_rect = letter.get_rect() 
+                letter_rect.center = square.tile.center
+                letter_rect.x -= square.tile.width / 2.7
+                letter_rect.y -= square.tile.width / 2.7
                 
                 screen.blit(letter, letter_rect)
             
@@ -161,7 +168,7 @@ class Board:
             
         if self.highlighted_square is not None:
             for square in self.highlighted_square.occupying_piece.getValidMoves(self):  
-                pygame.draw.circle(screen, (0,0,0), square.tile.center, 20)
+                pygame.draw.circle(screen, (150, 150, 150), square.tile.center, 20)
         
     def handle_click(self) -> None:
         x, y = pygame.mouse.get_pos()
@@ -174,7 +181,7 @@ class Board:
             highlighted_piece = self.highlighted_square.occupying_piece
             highlighted_square_pos = (self.highlighted_square.c, self.highlighted_square.r)
             if square_selected in highlighted_piece.getValidMoves(self):
-                self.squares = highlighted_piece.move((c, r), self.squares, permanent = True)
+                self.squares = highlighted_piece.move((c, r), self, permanent = True)
                 self.moves.append([deepcopy(self.turn), deepcopy(self.squares[highlighted_square_pos]), deepcopy(self.squares[(c, r)]), deepcopy(self.squares)])
                 self.turn = 'b' if self.turn == 'w' else 'w'
                 
@@ -184,7 +191,3 @@ class Board:
         elif piece_selected is not None and piece_selected.color == self.turn:
             square_selected.is_highlighted = True
             self.highlighted_square = square_selected
-            
-                
-        
-
