@@ -14,10 +14,9 @@ class Knight(Piece):
         for dc, dr in directions:
             curR = self.pos[1] + dr
             curC = super().columnShift(self.pos[0], dc)
-            if ((curR in range(1, 9))
-                and curC in 'abcdefgh'
-                and (squares[(curC, curR)].occupying_piece is None
-                or squares[(curC, curR)].occupying_piece.color != self.color)):
+            if ((super().isInBound(curC, curR)) and 
+                (squares[(curC, curR)].occupying_piece is None or 
+                 squares[(curC, curR)].occupying_piece.color != self.color)):
                 output.append(squares[(curC, curR)])
             
         return output

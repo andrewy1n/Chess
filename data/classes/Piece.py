@@ -64,3 +64,26 @@ class Piece:
     
     def columnShift(self, col: str, shift: int) -> str:
         return chr(ord(col)+shift)
+
+    def isInBound(self, c: str, r: int) -> bool:
+        return c in 'abcdefgh' and r in range(1, 9)
+    
+    def generateMoves(self, squares: dict, directions: list) -> list:
+        output = []
+        for dc, dr in directions:
+            curR = self.pos[1] + dr
+            curC = self.columnShift(self.pos[0], dc)
+            while(self.isInBound(curC, curR)):
+                piece = squares.get((curC, curR)).occupying_piece
+                if piece is None:
+                    output.append(squares[(curC, curR)])
+                elif piece.color != self.color:
+                    output.append(squares[(curC, curR)])
+                    break
+                else:
+                    break
+                
+                curR = curR + dr
+                curC = self.columnShift(curC, dc)
+            
+        return output
