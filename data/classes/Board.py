@@ -13,64 +13,49 @@ import pygame
 class Board:
     def __init__(self) -> None:
         self.squares = defaultdict(Square)
-        self.columns = "abcdefgh"
-        self.rows = list(range(1, 9))
+        self.files = "abcdefgh"
+        self.ranks = list(range(1, 9))
         self.moves = [] #[color, fromSquare, toSquare, curr_squares]
         self.turn = 'w'
         self.highlighted_square = None
 
-        self.chess_board_config = self.generateBoard()
-
+        start_FEN_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         self.initializeSquares()
+        self.loadPositionfromFEN(start_FEN_string)
 
-    def generateBoard(self) -> dict:
-        chess_board_dict = {
-            ("a", 1): "wr",
-            ("b", 1): "wn",
-            ("c", 1): "wb",
-            ("d", 1): "wq",
-            ("e", 1): "wk",
-            ("f", 1): "wb",
-            ("g", 1): "wn",
-            ("h", 1): "wr",
-            ("a", 8): "br",
-            ("b", 8): "bn",
-            ("c", 8): "bb",
-            ("d", 8): "bq",
-            ("e", 8): "bk",
-            ("f", 8): "bb",
-            ("g", 8): "bn",
-            ("h", 8): "br",
-        }
-        for c in self.columns:
-            chess_board_dict[(c, 2)] = "wp"  # white pawns
-            chess_board_dict[(c, 7)] = "bp"  # black pawns
-        for r in range(3, 7):
-            for c in self.columns:
-                chess_board_dict[(c, r)] = "o"  # empty spaces
-        return chess_board_dict
+        self.white_attacking_squares = self.loadAttackingSquares('w')
+        self.black_attacking_squares = self.loadAttackingSquares('b')
 
+    def loadPositionfromFEN(self, fen: str):
+        pieceTypeFromSymbol = {"p": Pawn, "b": Bishop, "n": Knight, "r": Rook, "q": Queen, "k": King}
+        
+        file, rank = 'a', 8
+        for c in list(fen):
+            if c == '/':
+                file = 'a'
+                rank -= 1
+            else:
+                if c.isnumeric():
+                    file = chr(ord(file) + int(c))
+                else:
+                    pieceColor = 'w' if c.isupper() else 'b'
+                    pieceType = pieceTypeFromSymbol.get(c.lower())
+                    square = self.squares[(file, rank)] 
+                    square.occupying_piece = pieceType(pieceColor, (file, rank))
+                    file = chr(ord(file) + 1)
+    
+    def loadAttackingSquares(self, color):
+        output = []
+        for square in self.squares.values():
+            piece = square.occupying_piece
+            if piece is not None and piece.color == color:
+                output.extend(piece.getPossibleMoves(self.squares, self.moves))
+        return output
+    
     def initializeSquares(self) -> None:
-        for c in self.columns:
-            for r in self.rows:
-                self.squares[(c, r)] = Square(c, r)
-                square = self.squares[(c, r)]
-                if self.chess_board_config[(c, r)][0] != "o":
-                    color = self.chess_board_config[(c, r)][0]
-                    type = self.chess_board_config[(c, r)][1]
-
-                    if type == "p":
-                        square.occupying_piece = Pawn(color, (c, r))
-                    elif type == "b":
-                        square.occupying_piece = Bishop(color, (c, r))
-                    elif type == "n":
-                        square.occupying_piece = Knight(color, (c, r))
-                    elif type == "r":
-                        square.occupying_piece = Rook(color, (c, r))
-                    elif type == "q":
-                        square.occupying_piece = Queen(color, (c, r))
-                    elif type == "k":
-                        square.occupying_piece = King(color, (c, r))
+        for file in self.files:
+            for rank in self.ranks:
+                self.squares[(file, rank)] = Square(file, rank)
 
     def isInCheck(self, color: str, squares: dict) -> bool:
         king_pos = None
@@ -116,9 +101,9 @@ class Board:
         return len(whiteMoves) == 0 or len(blackMoves) == 0
 
     def printBoard(self) -> None:
-        for row in self.rows[::-1]:
-            for col in self.columns:
-                piece = self.squares[(col, row)].occupying_piece
+        for rank in self.ranks[::-1]:
+            for file in self.files:
+                piece = self.squares[(file, rank)].occupying_piece
                 print(piece.color + piece.notation, end=' ') if piece else print('-', end = '  ')
             print()
     
