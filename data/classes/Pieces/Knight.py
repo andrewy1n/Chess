@@ -7,16 +7,10 @@ class Knight(Piece):
         self.white_piece_image_path  = 'data/images/knight-w.svg'
 
 
-    def getPossibleMoves(self, squares, moves) -> list:
-        output = []
+    def getPossibleMoves(self, board) -> list:
         directions = [(1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1)]
-        
-        for dc, dr in directions:
-            curR = self.pos[1] + dr
-            curC = super().columnShift(self.pos[0], dc)
-            if ((super().isInBound(curC, curR)) and 
-                (squares[(curC, curR)].occupying_piece is None or 
-                 squares[(curC, curR)].occupying_piece.color != self.color)):
-                output.append(squares[(curC, curR)])
             
-        return output
+        return super().generateDirectionalMoves(board, directions, repeated=False)
+    
+    def getAttackingMoves(self, board):
+        return self.getPossibleMoves(board)

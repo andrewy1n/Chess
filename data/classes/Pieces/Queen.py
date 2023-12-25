@@ -1,4 +1,5 @@
 from data.classes.Piece import Piece
+
 class Queen(Piece):
     def __init__(self, color, pos) -> None:
         super().__init__(color, pos)
@@ -7,7 +8,8 @@ class Queen(Piece):
         self.white_piece_image_path  = 'data/images/queen-w.svg'
 
 
-    def getPossibleMoves(self, squares, moves) -> list:
-        directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)]
-
-        return super().generateMoves(squares, directions)
+    def getPossibleMoves(self, board) -> list:
+        return super().generateDirectionalMoves(board, board.cardinals + board.ordinals)
+    
+    def getAttackingMoves(self, board):
+        return self.getPossibleMoves(board)

@@ -1,4 +1,7 @@
 from data.classes.Square import Square
+from data.classes.Piece import Piece
+from data.classes.Move import Move
+from data.classes.PieceList import PieceList
 from data.classes.Pieces.Rook import Rook
 from data.classes.Pieces.Bishop import Bishop
 from data.classes.Pieces.Knight import Knight
@@ -6,31 +9,36 @@ from data.classes.Pieces.Queen import Queen
 from data.classes.Pieces.King import King
 from data.classes.Pieces.Pawn import Pawn
 from collections import defaultdict
-from copy import deepcopy
-import pygame
-
 
 class Board:
-    def __init__(self) -> None:
+    def __init__(self, FEN_string=None) -> None:
         self.squares = defaultdict(Square)
         self.files = "abcdefgh"
         self.ranks = list(range(1, 9))
-        self.moves = [] #[color, fromSquare, toSquare, curr_squares]
+        self.ordinals = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        self.cardinals = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        self.move_history = []
         self.turn = 'w'
         self.highlighted_square = None
 
+        self.piece_list = PieceList()
+
+        self.white_king_pos = ('e', 1)
+        self.black_king_pos = ('e', 8)
+
         start_FEN_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         self.initializeSquares()
-        self.loadPositionfromFEN(start_FEN_string)
+        if FEN_string is None:
+            self.loadPositionfromFEN(start_FEN_string)
+        else:
+            self.loadPositionfromFEN(FEN_string)
 
-        self.white_attacking_squares = self.loadAttackingSquares('w')
-        self.black_attacking_squares = self.loadAttackingSquares('b')
 
     def loadPositionfromFEN(self, fen: str):
         pieceTypeFromSymbol = {"p": Pawn, "b": Bishop, "n": Knight, "r": Rook, "q": Queen, "k": King}
-        
+
         file, rank = 'a', 8
-        for c in list(fen):
+        for c in fen:
             if c == '/':
                 file = 'a'
                 rank -= 1
@@ -41,138 +49,164 @@ class Board:
                     pieceColor = 'w' if c.isupper() else 'b'
                     pieceType = pieceTypeFromSymbol.get(c.lower())
                     square = self.squares[(file, rank)] 
-                    square.occupying_piece = pieceType(pieceColor, (file, rank))
+                    piece = pieceType(pieceColor, (file, rank))
+                    square.occupying_piece = piece
+
+                    self.piece_list.addPiece(piece)
                     file = chr(ord(file) + 1)
-    
-    def loadAttackingSquares(self, color):
-        output = []
-        for square in self.squares.values():
-            piece = square.occupying_piece
-            if piece is not None and piece.color == color:
-                output.extend(piece.getPossibleMoves(self.squares, self.moves))
-        return output
     
     def initializeSquares(self) -> None:
         for file in self.files:
             for rank in self.ranks:
-                self.squares[(file, rank)] = Square(file, rank)
-
-    def isInCheck(self, color: str, squares: dict) -> bool:
-        king_pos = None
-        
-        for pos in squares: #find king position
-            if squares[pos].occupying_piece is not None:
-                piece = squares[pos].occupying_piece
-                if piece.color == color and piece.notation == 'K':
-                    king_pos = pos
-        
-        return self.isAttacked(color, king_pos, squares)
+                pos = (file, rank)
+                self.squares[pos] = Square(file, rank)
     
-    def isAttacked(self, color: str, pos: tuple, squares: dict) -> bool:
-        for square in squares.values():
-            piece = square.occupying_piece
-            if piece is not None and piece.color != color:
-                for attacked_square in piece.getPossibleMoves(squares, self.moves):
-                    if(attacked_square.c == pos[0] and attacked_square.r == pos[1]):
-                        return True   
-        return False
-    
-    def isCheckMate(self) -> bool:
-        possibleMoves = []
-        for square in self.squares.values():
-            piece = square.occupying_piece
-            if(piece is not None and piece.color == self.turn):
-                possibleMoves.extend(piece.getValidMoves(self))
+    def makeMove(self, move: Move) -> None:
+        """
+        Makes a move on the board. If the move is permanent, piece's that are moved
+        change their own positions. Non-permanent moves are meant to check for 
+        move validity.
+        """
+        #King Side Castling
+        if move.is_king_side_castle:        
+            self.piece_list.removePiece(move.king_side_rook)
+            self.squares[('h', move.target_pos[1])].occupying_piece = None
+            self.squares[('f', move.target_pos[1])].occupying_piece = move.king_side_rook
             
-        return len(possibleMoves) == 0 and self.isInCheck(self.turn, self.squares)
+            move.king_side_rook.pos = ('f', move.target_pos[1])
+            self.piece_list.addPiece(move.king_side_rook)
 
+        #Queen Side Castling    
+        elif move.is_queen_side_castle:
+            self.piece_list.removePiece(move.queen_side_rook)
+            self.squares[('a', move.target_pos[1])].occupying_piece = None
+            self.squares[('d', move.target_pos[1])].occupying_piece = move.queen_side_rook
+            
+            move.queen_side_rook.pos = ('d', move.target_pos[1])
+            self.piece_list.addPiece(move.queen_side_rook)
+        
+        #En Passant
+        if move.is_enpassant:
+            self.piece_list.removePiece(move.enpassant_pawn)
+            move.enpassant_square.occupying_piece = None
+
+        #Start Square has no piece    
+        move.start_square.occupying_piece = None 
+        
+        #Remove that piece from the list
+        self.piece_list.removePiece(move.start_piece)
+
+        #Change the piece's position to target position
+        moved_piece = move.start_piece
+        moved_piece.pos = move.target_pos
+
+        #Promotion
+        if move.is_promotion:
+            move.target_square.occupying_piece = move.promoted_piece
+            self.piece_list.addPiece(move.promoted_piece)
+        else:
+            #Otherwise, normally occupy target square with moved piece and add to piece list
+            move.target_square.occupying_piece = moved_piece
+            self.piece_list.addPiece(moved_piece)
+
+        if move.start_piece.notation == 'K':
+            if move.start_piece.color == 'w':
+                self.white_king_pos = move.target_pos
+            else:
+                self.black_king_pos = move.target_pos
+        
+        #If a piece is taken, remove them from their pieces set
+        if move.target_piece is not None:
+            self.piece_list.removePiece(move.target_piece)
+        
+        self.turn = 'b' if self.turn == 'w' else 'w'
+        
+        #TODO fix this
+        if (move.start_piece.notation == 'K' or move.start_piece.notation == 'R'):
+            move.start_piece.has_moved = True
+            
+        self.move_history.append(move)
+
+    def unmakeMove(self, move: Move):
+        """
+        Undo a move, essentially the inverse of makeMove.
+        """
+        #King Side Castling
+        if move.is_king_side_castle:        
+            self.piece_list.removePiece(move.king_side_rook)
+            self.squares[('h', move.start_pos[1])].occupying_piece = move.king_side_rook
+            self.squares[('f', move.start_pos[1])].occupying_piece = None
+            move.king_side_rook.pos = ('h', move.start_pos[1])
+            self.piece_list.addPiece(move.king_side_rook)
+
+        #Queen Side Castling    
+        elif move.is_queen_side_castle:
+            self.piece_list.removePiece(move.queen_side_rook)
+            self.squares[('a', move.start_pos[1])].occupying_piece = move.queen_side_rook
+            self.squares[('d', move.start_pos[1])].occupying_piece = None
+            move.queen_side_rook.pos = ('a', move.start_pos[1])
+            self.piece_list.addPiece(move.queen_side_rook)
+        
+        #En Passant
+        if move.is_enpassant:
+            move.enpassant_square.occupying_piece = move.enpassant_pawn
+            self.piece_list.addPiece(move.enpassant_pawn)
+        
+        #If pawn promoted, remove promoted piece, else remove moved_piece
+        if move.is_promotion:
+            self.piece_list.removePiece(move.promoted_piece)
+        else:
+            moved_piece = move.start_piece
+            self.piece_list.removePiece(moved_piece)
+        
+        #Return Start piece to start position
+        move.start_piece.pos = move.start_pos
+        
+        #Return start and target squares and their own pieces
+        move.start_square.occupying_piece = move.start_piece
+        move.target_square.occupying_piece = move.target_piece
+        
+        #Add back start piece back to piece list
+        self.piece_list.addPiece(move.start_piece)
+
+        #If a piece was captured, return piece back to piece list
+        if move.target_piece is not None:
+            self.piece_list.addPiece(move.target_piece)
+        
+        if move.start_piece.notation == 'K':
+            if move.start_piece.color == 'w':
+                self.white_king_pos = move.start_pos
+            else:
+                self.black_king_pos = move.start_pos
+        
+        self.turn = 'b' if self.turn == 'w' else 'w'
+
+        #TODO fix this
+        if (move.start_piece.notation == 'K' or move.start_piece.notation == 'R'):
+            move.start_piece.has_moved = False
+            
+        self.move_history.pop()
+        
+    def isInCheck(self, color) -> bool:
+        king_pos = self.white_king_pos if color == 'w' else self.black_king_pos
+        
+        return king_pos in self.piece_list.getAttackingSquares('b' if color == 'w' else 'w', self)
+        
+    def isCheckMate(self) -> bool:
+        if not self.isInCheck(self.turn):
+            return False
+  
+        return len(self.piece_list.getAllValidMoves(self.turn, self)) == 0
+
+    def isStaleMate(self) -> bool:        
+        white_moves = self.piece_list.getAllValidMoves('w', self)
+        black_moves = self.piece_list.getAllValidMoves('b', self)
+        return (len(white_moves) == 0 or len(black_moves) == 0) and not self.isInCheck(self.turn)
     
-    def isStaleMate(self) -> bool:
-        whiteMoves = []
-        blackMoves = []
-        for square in self.squares.values():
-            piece = square.occupying_piece
-            if piece != None:
-                if piece.color == 'w':
-                    whiteMoves.extend(piece.getValidMoves(self))
-                else:
-                    blackMoves.extend(piece.getValidMoves(self))
-
-        return len(whiteMoves) == 0 or len(blackMoves) == 0
-
+    #Prints basic text board
     def printBoard(self) -> None:
         for rank in self.ranks[::-1]:
             for file in self.files:
                 piece = self.squares[(file, rank)].occupying_piece
                 print(piece.color + piece.notation, end=' ') if piece else print('-', end = '  ')
             print()
-    
-    def drawBoard(self, screen) -> None:
-        font = pygame.font.Font(None, 24)
-
-        for square in self.squares.values():
-            if square.is_highlighted:
-                pygame.draw.rect(screen, (255, 244, 79), square.tile)
-            else:
-                pygame.draw.rect(screen, square.color, square.tile)
-
-            if square.r == 1:
-                letter_color = (2, 50, 37) if square.color == (255, 255, 255) else (255, 255, 255)
-                char = square.c.upper()
-
-                letter = font.render(char, True, letter_color)
-                letter_rect = letter.get_rect() 
-                letter_rect.center = square.tile.center
-                letter_rect.x += square.tile.width / 2.7
-                letter_rect.y += square.tile.width / 2.7
-                
-                screen.blit(letter, letter_rect)
-            
-            if square.c == 'a':
-                letter_color = (2, 50, 37) if square.color == (255, 255, 255) else (255, 255, 255)
-                char = str(square.r)
-
-                letter = font.render(char, True, letter_color)
-                letter_rect = letter.get_rect() 
-                letter_rect.center = square.tile.center
-                letter_rect.x -= square.tile.width / 2.7
-                letter_rect.y -= square.tile.width / 2.7
-                
-                screen.blit(letter, letter_rect)
-            
-            if square.occupying_piece is not None:
-                piece = square.occupying_piece
-                piece_image = None
-                if piece.color == 'w':
-                    piece_image = pygame.image.load(piece.white_piece_image_path)
-                else:
-                    piece_image = pygame.image.load(piece.black_piece_image_path)
-                piece_image = pygame.transform.scale2x(piece_image)
-                tile_center = (square.tile.centerx - square.tile.width//2 + 5, square.tile.centery - square.tile.height//2)
-                screen.blit(piece_image, tile_center)
-            
-        if self.highlighted_square is not None:
-            for square in self.highlighted_square.occupying_piece.getValidMoves(self):  
-                pygame.draw.circle(screen, (150, 150, 150), square.tile.center, 20)
-        
-    def handle_click(self) -> None:
-        x, y = pygame.mouse.get_pos()
-        r = 8 - y//100
-        c = chr(x//100 + ord('a'))
-        square_selected =  self.squares[(c, r)]
-        piece_selected = square_selected.occupying_piece
-        
-        if(self.highlighted_square is not None):
-            highlighted_piece = self.highlighted_square.occupying_piece
-            highlighted_square_pos = (self.highlighted_square.c, self.highlighted_square.r)
-            if square_selected in highlighted_piece.getValidMoves(self):
-                self.squares = highlighted_piece.move((c, r), self, permanent = True)
-                self.moves.append([deepcopy(self.turn), deepcopy(self.squares[highlighted_square_pos]), deepcopy(self.squares[(c, r)]), deepcopy(self.squares)])
-                self.turn = 'b' if self.turn == 'w' else 'w'
-                
-            self.squares[highlighted_square_pos].is_highlighted = False
-            self.highlighted_square = None
-        
-        elif piece_selected is not None and piece_selected.color == self.turn:
-            square_selected.is_highlighted = True
-            self.highlighted_square = square_selected

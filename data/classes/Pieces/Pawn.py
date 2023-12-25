@@ -1,50 +1,78 @@
 from data.classes.Piece import Piece
+from data.classes.Move import Move
+from data.classes.Pieces.Bishop import Bishop
+from data.classes.Pieces.Knight import Knight
+from data.classes.Pieces.Rook import Rook
+from data.classes.Pieces.Queen import Queen
+
 class Pawn(Piece):
     def __init__(self, color, pos) -> None:
         super().__init__(color, pos)
         self.notation = "P"
+        self.promotion_list = [Bishop, Knight, Rook, Queen]
         self.black_piece_image_path  = 'data/images/pawn-b.svg'
         self.white_piece_image_path  = 'data/images/pawn-w.svg'
 
-    def getPossibleMoves(self, squares, moves) -> list:
+    def getPossibleMoves(self, board) -> list:
         output = []
         
         #white and black different conditions color positional modifier
         cm = 1 if self.color != 'b' else -1
         
-        #if one space forward is open add to set           
-        if(self.pos[1]+1*cm in range(1,9) and 
-           squares[(self.pos[0], self.pos[1]+1*cm)].occupying_piece is None):
-            output.append(squares[(self.pos[0], self.pos[1]+1*cm)])
-            #given one space open, if two spaces is open and starts at 2, add to set
+        forward_one = (self.pos[0], self.pos[1] + cm)
+        forward_two = (self.pos[0], self.pos[1] + 2*cm)
+
+        #Pawn Forward Moves
+        if(forward_one[1] in range(1,9) and 
+           board.squares[forward_one].occupying_piece is None):
+            if forward_one[1] == 1 or forward_one[1] == 8:
+                output.extend(self.appendPromotingMoves(attacking_move.target_square, board))
+            else:    
+                output.append(Move(board.squares[self.pos], board.squares[forward_one]))
+            
             if(((self.pos[1] == 2 and self.color == 'w') or 
                (self.pos[1] == 7 and self.color == 'b')) and
-                squares[(self.pos[0], self.pos[1]+2*cm)].occupying_piece is None): 
-                output.append(squares[(self.pos[0], self.pos[1]+2*cm)]) 
+                board.squares[forward_two].occupying_piece is None):
+                move = Move(board.squares[self.pos], board.squares[forward_two])
+                move.enpassant_flag = True
+                output.append(move) 
         
-        #diagonals are black pieces that can be taken
-        if (ord(self.pos[0]) < ord('h') #right
-            and squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)].occupying_piece is not None 
-            and squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)].occupying_piece.color != self.color): 
-            output.append(squares[(super().columnShift(self.pos[0], 1), self.pos[1]+1*cm)])
+        #Diagonals are opposing pieces that can be taken
+        for attacking_move in self.getAttackingMoves(board):     
+            if attacking_move.target_piece is not None and attacking_move.target_piece.color != self.color:
+                if attacking_move.target_pos[1] == 8 or attacking_move.target_pos[1] == 1:
+                    output.extend(self.appendPromotingMoves(attacking_move.target_square, board))
+                else:
+                    output.append(attacking_move)
         
-        if (ord(self.pos[0]) > ord('a') #left
-            and squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)].occupying_piece is not None
-            and squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)].occupying_piece.color != self.color): 
-            output.append(squares[(super().columnShift(self.pos[0], -1), self.pos[1]+1*cm)])
+        #En Passant
+        pawn_rank = 5 if self.color == 'w' else 4
         
-        #en passant
-        pawn_row = 5 if self.color == 'w' else 4
-        
-        if(self.pos[1] == pawn_row and len(moves) > 0):
-            prev_end_square = moves[-1][2]
-            prev_piece = prev_end_square.occupying_piece
-            pawn_dist = ord(prev_end_square.c) - ord(self.pos[0])
+        if(self.pos[1] == pawn_rank and len(board.move_history) > 0):
+            prev_move =  board.move_history[-1]
+            pawn_dist = ord(prev_move.target_square.file) - ord(self.pos[0])     
+            diagonal_move = (super().columnShift(self.pos[0], pawn_dist), self.pos[1] + cm)
 
-            if(prev_piece is not None and 
-               prev_piece.notation == 'P'and 
-               prev_piece.pos[1] == pawn_row and 
-               abs(pawn_dist) == 1):
-                output.append(squares[(super().columnShift(self.pos[0], pawn_dist), self.pos[1]+1*cm)])
+            if prev_move.enpassant_flag and abs(pawn_dist) == 1:
+                move = Move(board.squares[self.pos], board.squares[diagonal_move])
+                move.is_enpassant = True
+                move.enpassant_pawn = prev_move.start_piece
+                move.enpassant_square = prev_move.target_square
+                output.append(move)
 
+        return output
+    
+    def getAttackingMoves(self, board):
+        cm = 1 if self.color == 'w' else -1
+        directions = [(1, 1 * cm), (-1, 1 * cm)]
+
+        return super().generateDirectionalMoves(board, directions, repeated=False)
+    
+    def appendPromotingMoves(self, target_square, board):
+        output = []
+        for piece in self.promotion_list:
+            move = Move(board.squares[self.pos], target_square)
+            move.is_promotion = True
+            move.promoted_piece = piece(self.color, move.target_pos)
+            output.append(move)
         return output
