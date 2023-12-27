@@ -5,7 +5,6 @@ class King(Piece):
     def __init__(self, color, pos) -> None:
         super().__init__(color, pos)
         self.notation = "K"
-        self.has_moved = False
         self.black_piece_image_path  = 'data/images/king-b.svg'
         self.white_piece_image_path  = 'data/images/king-w.svg'
 
@@ -14,13 +13,14 @@ class King(Piece):
         
         output.extend(self.getAttackingMoves(board))
         
-        if(not self.has_moved
-            and not board.isInCheck(self.color)):
+        if(not board.isInCheck(self.color)):
             rookRow = self.pos[1]
             opposing_moves = board.piece_list.getAttackingSquares('b' if self.color == 'w' else 'w', board)
-
+            
             #king side castling
-            if (board.squares[('h', rookRow)].occupying_piece is not None and 
+            if (((self.color == 'w' and 'K' in board.current_game_state.castling_rights) or
+                 (self.color == 'b' and 'k' in board.current_game_state.castling_rights)) and
+                board.squares[('h', rookRow)].occupying_piece is not None and 
                 board.squares[('h', rookRow)].occupying_piece.notation == 'R' and 
                 not board.squares[('h', rookRow)].occupying_piece.has_moved and 
                 board.squares[('f', rookRow)].occupying_piece is None and 
@@ -34,7 +34,9 @@ class King(Piece):
                 output.append(move)
             
             #queen side castling
-            if (board.squares[('a', rookRow)].occupying_piece is not None and
+            if (((self.color == 'w' and 'Q' in board.current_game_state.castling_rights) or
+                 (self.color == 'b' and 'q' in board.current_game_state.castling_rights)) and
+                 board.squares[('a', rookRow)].occupying_piece is not None and
                 board.squares[('a', rookRow)].occupying_piece.notation == 'R' and 
                 not board.squares[('a', rookRow)].occupying_piece.has_moved and 
                 board.squares[('c', rookRow)].occupying_piece is None and 

@@ -2,6 +2,7 @@ from data.classes.Square import Square
 from data.classes.Piece import Piece
 from data.classes.Move import Move
 from data.classes.PieceList import PieceList
+from data.classes.GameState import GameState
 from data.classes.Pieces.Rook import Rook
 from data.classes.Pieces.Bishop import Bishop
 from data.classes.Pieces.Knight import Knight
@@ -18,6 +19,8 @@ class Board:
         self.ordinals = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
         self.cardinals = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         self.move_history = []
+        self.game_state_history = []
+        self.current_game_state = None
         self.turn = 'w'
         self.highlighted_square = None
 
@@ -26,7 +29,9 @@ class Board:
         self.white_king_pos = ('e', 1)
         self.black_king_pos = ('e', 8)
 
-        start_FEN_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        self.full_moves = None
+
+        start_FEN_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.initializeSquares()
         if FEN_string is None:
             self.loadPositionfromFEN(start_FEN_string)
@@ -36,9 +41,15 @@ class Board:
 
     def loadPositionfromFEN(self, fen: str):
         pieceTypeFromSymbol = {"p": Pawn, "b": Bishop, "n": Knight, "r": Rook, "q": Queen, "k": King}
+        positions, turn, castling_rights, enpassant_pos, half_moves, full_moves = fen.split()
+        
+        self.current_game_state = GameState(enpassant_pos, castling_rights, int(half_moves))
+        self.game_state_history.append(self.current_game_state)
+        self.turn = turn
+        self.full_moves = int(full_moves)
 
         file, rank = 'a', 8
-        for c in fen:
+        for c in positions:
             if c == '/':
                 file = 'a'
                 rank -= 1
@@ -67,6 +78,10 @@ class Board:
         change their own positions. Non-permanent moves are meant to check for 
         move validity.
         """
+        new_enpassant_pos = None
+        new_castling_rights = self.current_game_state.castling_rights
+        new_half_move_counter = self.current_game_state.half_move_counter
+
         #King Side Castling
         if move.is_king_side_castle:        
             self.piece_list.removePiece(move.king_side_rook)
@@ -119,13 +134,40 @@ class Board:
         if move.target_piece is not None:
             self.piece_list.removePiece(move.target_piece)
         
+        if self.turn == 'b':
+            self.full_moves += 1
+
         self.turn = 'b' if self.turn == 'w' else 'w'
         
-        #TODO fix this
-        if (move.start_piece.notation == 'K' or move.start_piece.notation == 'R'):
-            move.start_piece.has_moved = True
+        if moved_piece.notation == 'K':
+            if moved_piece.color == 'w':
+                new_castling_rights = new_castling_rights.replace('K', "")
+                new_castling_rights = new_castling_rights.replace('Q', "")
+            else:
+                new_castling_rights = new_castling_rights.replace('k', "")
+                new_castling_rights = new_castling_rights.replace('q', "")
+        
+        if moved_piece.notation == 'R':
+            if move.start_pos == ('a', 1):
+                new_castling_rights = new_castling_rights.replace('Q', "")
+            elif move.start_pos == ('h', 1):
+                new_castling_rights = new_castling_rights.replace('K', "")
+            elif move.start_pos == ('a', 8):
+                new_castling_rights = new_castling_rights.replace('q', "")
+            elif move.start_pos == ('h', 8):
+                new_castling_rights = new_castling_rights.replace('k', "")
+        
+        if moved_piece.notation == 'P':
+            new_half_move_counter = 0
+        else:
+            new_half_move_counter += 1
+        
             
         self.move_history.append(move)
+
+        new_state = GameState(new_enpassant_pos, new_castling_rights, new_half_move_counter)
+        self.game_state_history.append(new_state)
+        self.current_game_state = new_state
 
     def unmakeMove(self, move: Move):
         """
@@ -181,11 +223,13 @@ class Board:
         
         self.turn = 'b' if self.turn == 'w' else 'w'
 
-        #TODO fix this
-        if (move.start_piece.notation == 'K' or move.start_piece.notation == 'R'):
-            move.start_piece.has_moved = False
-            
+        if self.turn == 'b':
+            self.full_moves -= 1
+
+        self.game_state_history.pop()
         self.move_history.pop()
+
+        self.current_game_state = self.game_state_history[-1]
         
     def isInCheck(self, color) -> bool:
         king_pos = self.white_king_pos if color == 'w' else self.black_king_pos
@@ -201,7 +245,7 @@ class Board:
     def isStaleMate(self) -> bool:        
         white_moves = self.piece_list.getAllValidMoves('w', self)
         black_moves = self.piece_list.getAllValidMoves('b', self)
-        return (len(white_moves) == 0 or len(black_moves) == 0) and not self.isInCheck(self.turn)
+        return ((len(white_moves) == 0 or len(black_moves) == 0) and not self.isInCheck(self.turn)) or self.current_game_state.half_move_counter >= 100
     
     #Prints basic text board
     def printBoard(self) -> None:
