@@ -5,8 +5,8 @@ class King(Piece):
     def __init__(self, color, pos) -> None:
         super().__init__(color, pos)
         self.notation = "K"
-        self.black_piece_image_path  = 'data/images/king-b.svg'
-        self.white_piece_image_path  = 'data/images/king-w.svg'
+        self.black_piece_image_path  = 'data/images/king-b.png'
+        self.white_piece_image_path  = 'data/images/king-w.png'
 
     def getPossibleMoves(self, board) -> list:
         output = []
@@ -22,7 +22,6 @@ class King(Piece):
                  (self.color == 'b' and 'k' in board.current_game_state.castling_rights)) and
                 board.squares[('h', rookRow)].occupying_piece is not None and 
                 board.squares[('h', rookRow)].occupying_piece.notation == 'R' and 
-                not board.squares[('h', rookRow)].occupying_piece.has_moved and 
                 board.squares[('f', rookRow)].occupying_piece is None and 
                 board.squares[('g', rookRow)].occupying_piece is None and 
                 ('f', rookRow) not in opposing_moves):
@@ -37,8 +36,7 @@ class King(Piece):
             if (((self.color == 'w' and 'Q' in board.current_game_state.castling_rights) or
                  (self.color == 'b' and 'q' in board.current_game_state.castling_rights)) and
                  board.squares[('a', rookRow)].occupying_piece is not None and
-                board.squares[('a', rookRow)].occupying_piece.notation == 'R' and 
-                not board.squares[('a', rookRow)].occupying_piece.has_moved and 
+                board.squares[('a', rookRow)].occupying_piece.notation == 'R' and
                 board.squares[('c', rookRow)].occupying_piece is None and 
                 board.squares[('b', rookRow)].occupying_piece is None and 
                 board.squares[('d', rookRow)].occupying_piece is None and

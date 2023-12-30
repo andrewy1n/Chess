@@ -29,3 +29,6 @@ class PieceList:
             for move in piece.getValidMoves(board):
                 output.append(move)
         return output
+
+    def getAllPieces(self) -> set:
+        return self.white_pieces.union(self.black_pieces)

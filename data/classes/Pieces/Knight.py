@@ -3,8 +3,8 @@ class Knight(Piece):
     def __init__(self, color, pos) -> None:
         super().__init__(color, pos)
         self.notation = "N"
-        self.black_piece_image_path  = 'data/images/knight-b.svg'
-        self.white_piece_image_path  = 'data/images/knight-w.svg'
+        self.black_piece_image_path  = 'data/images/knight-b.png'
+        self.white_piece_image_path  = 'data/images/knight-w.png'
 
 
     def getPossibleMoves(self, board) -> list:

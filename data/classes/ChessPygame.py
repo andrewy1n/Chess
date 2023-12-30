@@ -2,10 +2,11 @@ from data.classes.Board import Board
 import pygame
 import sys
 
+# Unused
 class Chess:
     def __init__(self, WIDTH=800, HEIGHT=800):
         pygame.init()
-        self.board = Board("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+        self.board = Board()
         self.WIDTH = WIDTH
         self.HEIGHT = HEIGHT
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))

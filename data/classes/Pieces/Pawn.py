@@ -10,8 +10,8 @@ class Pawn(Piece):
         super().__init__(color, pos)
         self.notation = "P"
         self.promotion_list = [Bishop, Knight, Rook, Queen]
-        self.black_piece_image_path  = 'data/images/pawn-b.svg'
-        self.white_piece_image_path  = 'data/images/pawn-w.svg'
+        self.black_piece_image_path  = 'data/images/pawn-b.png'
+        self.white_piece_image_path  = 'data/images/pawn-w.png'
 
     def getPossibleMoves(self, board) -> list:
         output = []
@@ -26,7 +26,7 @@ class Pawn(Piece):
         if(forward_one[1] in range(1,9) and 
            board.squares[forward_one].occupying_piece is None):
             if forward_one[1] == 1 or forward_one[1] == 8:
-                output.extend(self.appendPromotingMoves(attacking_move.target_square, board))
+                output.extend(self.appendPromotingMoves(board.squares[forward_one], board))
             else:    
                 output.append(Move(board.squares[self.pos], board.squares[forward_one]))
             

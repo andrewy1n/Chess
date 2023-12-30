@@ -1,4 +1,4 @@
-from data.classes.Chess import Chess
+from data.classes.ChessTK import Chess
 
 chess = Chess()
 
