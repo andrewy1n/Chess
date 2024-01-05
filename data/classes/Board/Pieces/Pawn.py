@@ -1,9 +1,9 @@
-from data.classes.Piece import Piece
-from data.classes.Move import Move
-from data.classes.Pieces.Bishop import Bishop
-from data.classes.Pieces.Knight import Knight
-from data.classes.Pieces.Rook import Rook
-from data.classes.Pieces.Queen import Queen
+from data.classes.Board.Piece import Piece
+from data.classes.Board.Move import Move
+from data.classes.Board.Pieces.Bishop import Bishop
+from data.classes.Board.Pieces.Knight import Knight
+from data.classes.Board.Pieces.Rook import Rook
+from data.classes.Board.Pieces.Queen import Queen
 
 class Pawn(Piece):
     def __init__(self, color, pos) -> None:

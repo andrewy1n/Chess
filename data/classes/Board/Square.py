@@ -3,4 +3,3 @@ class Square:
         self.rank = rank
         self.file = file
         self.occupying_piece = None
-        

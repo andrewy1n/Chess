@@ -1,4 +1,4 @@
-from data.classes.Move import Move
+from data.classes.Board.Move import Move
 class Piece:
     def __init__(self, color: str, pos: tuple) -> None:
         self.color = color

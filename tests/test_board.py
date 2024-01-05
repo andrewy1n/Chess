@@ -1,5 +1,5 @@
 import unittest
-from data.classes.Board import Board  
+from data.classes.Board.Board import Board  
 
 class BoardTests(unittest.TestCase):
     def test_king_moves(self):

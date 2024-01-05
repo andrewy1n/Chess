@@ -1,18 +1,18 @@
-from data.classes.Square import Square
-from data.classes.Piece import Piece
-from data.classes.Move import Move
-from data.classes.PieceList import PieceList
-from data.classes.GameState import GameState
-from data.classes.Pieces.Rook import Rook
-from data.classes.Pieces.Bishop import Bishop
-from data.classes.Pieces.Knight import Knight
-from data.classes.Pieces.Queen import Queen
-from data.classes.Pieces.King import King
-from data.classes.Pieces.Pawn import Pawn
+from data.classes.Board.Square import Square
+from data.classes.Board.Piece import Piece
+from data.classes.Board.Move import Move
+from data.classes.Board.PieceList import PieceList
+from data.classes.Board.GameState import GameState
+from data.classes.Board.Pieces.Rook import Rook
+from data.classes.Board.Pieces.Bishop import Bishop
+from data.classes.Board.Pieces.Knight import Knight
+from data.classes.Board.Pieces.Queen import Queen
+from data.classes.Board.Pieces.King import King
+from data.classes.Board.Pieces.Pawn import Pawn
 from collections import defaultdict
 
 class Board:
-    def __init__(self, FEN_string=None) -> None:
+    def __init__(self, FEN_string="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") -> None:
         self.squares = defaultdict(Square)
         self.files = "abcdefgh"
         self.ranks = list(range(1, 9))
@@ -31,17 +31,17 @@ class Board:
 
         self.full_moves = None
 
-        start_FEN_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.initializeSquares()
-        if FEN_string is None:
-            self.loadPositionfromFEN(start_FEN_string)
-        else:
-            self.loadPositionfromFEN(FEN_string)
-
+        
+        self.loadPositionfromFEN(FEN_string)
 
     def loadPositionfromFEN(self, fen: str):
         pieceTypeFromSymbol = {"p": Pawn, "b": Bishop, "n": Knight, "r": Rook, "q": Queen, "k": King}
-        positions, turn, castling_rights, enpassant_pos, half_moves, full_moves = fen.split()
+        fen_parts = fen.split()
+        
+        positions, turn, castling_rights, enpassant_pos, *extra_parts = fen_parts
+        half_moves = extra_parts[0] if extra_parts else '0'  # Default to '0' if not provided
+        full_moves = extra_parts[1] if len(extra_parts) > 1 else '1'  # Default to '1' if not provided
         
         self.current_game_state = GameState(enpassant_pos, castling_rights, int(half_moves))
         self.game_state_history.append(self.current_game_state)
@@ -65,6 +65,28 @@ class Board:
 
                     self.piece_list.addPiece(piece)
                     file = chr(ord(file) + 1)
+    
+    def getCurrentFEN(self):
+        fen = ""
+        empty_count = 0
+        for rank in self.ranks[::-1]:
+            for file in self.files:
+                square = self.squares[(file, rank)]
+                if square.occupying_piece is None:
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen += str(empty_count)
+                        empty_count = 0
+                    piece = square.occupying_piece
+                    fen += piece.notation.lower() if piece.color == 'b' else piece.notation
+            if empty_count > 0:
+                fen += str(empty_count)
+                empty_count = 0
+            if rank > 1:
+                fen += "/"
+        
+        return fen + " " + self.turn + " " + self.current_game_state.castling_rights + " -"
     
     def initializeSquares(self) -> None:
         for file in self.files:

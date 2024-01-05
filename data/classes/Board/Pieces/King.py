@@ -1,5 +1,5 @@
-from data.classes.Piece import Piece
-from data.classes.Move import Move
+from data.classes.Board.Piece import Piece
+from data.classes.Board.Move import Move
 
 class King(Piece):
     def __init__(self, color, pos) -> None:

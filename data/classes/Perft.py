@@ -1,4 +1,4 @@
-from data.classes.Board import Board
+from data.classes.Board.Board import Board
 
 class Perft:
     def __init__(self, FEN_string=None):

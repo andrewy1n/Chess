@@ -2,7 +2,7 @@ import unittest
 from data.classes.Perft import Perft
 
 class TestMoveGeneration(unittest.TestCase):
-    """
+    
     def test_move_generation_pos_5_board_1ply(self):
         perft = Perft("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
         self.assertEqual(perft.perft(1), 44)
@@ -10,7 +10,6 @@ class TestMoveGeneration(unittest.TestCase):
     def test_move_generation_pos_5_board_2ply(self):
         perft = Perft("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
         self.assertEqual(perft.perft(2), 1486)
-    """
     
     def test_move_generation_start_board_1ply(self):
         perft = Perft()
@@ -25,18 +24,6 @@ class TestMoveGeneration(unittest.TestCase):
         self.assertEqual(perft.perft(3), 8902)
 
     def test_move_generation_start_board_4ply(self):
-        perft = Perft()
-        self.assertEqual(perft.perft(4), 197281)
-    
-    def test_move_generation_start_board_4ply_2(self):
-        perft = Perft()
-        self.assertEqual(perft.perft(4), 197281)
-    
-    def test_move_generation_start_board_4ply_3(self):
-        perft = Perft()
-        self.assertEqual(perft.perft(4), 197281)
-    
-    def test_move_generation_start_board_4ply_4(self):
         perft = Perft()
         self.assertEqual(perft.perft(4), 197281)
     

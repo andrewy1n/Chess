@@ -1,4 +1,4 @@
-from data.classes.Piece import Piece
+from data.classes.Board.Piece import Piece
 
 class Rook(Piece):
     def __init__(self, color: str, pos: tuple) -> None:
@@ -6,7 +6,6 @@ class Rook(Piece):
         self.notation = "R"
         self.black_piece_image_path  = 'data/images/rook-b.png'
         self.white_piece_image_path  = 'data/images/rook-w.png'
-
 
     def getPossibleMoves(self, board) -> list:
         return super().generateDirectionalMoves(board, board.cardinals)

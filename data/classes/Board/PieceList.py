@@ -1,3 +1,5 @@
+from data.classes.Evaluation import Evaluation
+
 class PieceList:
     def __init__(self) -> None:
         self.white_pieces = set()
@@ -29,6 +31,29 @@ class PieceList:
             for move in piece.getValidMoves(board):
                 output.append(move)
         return output
+    
+    def getOrderedMoves(self, color, board):
+        output = []
+
+        for piece in self.black_pieces if color == 'b' else self.white_pieces:
+            piece_value = Evaluation.chess_value_dict[piece.notation]
+            for move in piece.getValidMoves(board):
+                score = 0
+
+                if move.target_piece is not None:
+                    target_piece_value = Evaluation.chess_value_dict[move.target_piece.notation]
+                    capture_score = target_piece_value - piece_value
+                    if capture_score > 0:
+                        score += 500 + capture_score
+                    else:
+                        score += capture_score
+                
+                if move.start_piece.notation == 'P' and move.is_promotion and move.promoted_piece.notation == 'Q':
+                    score += 1000
+                
+                output.append((-score, move))
+        
+        return sorted(output, key=lambda x: x[0])
 
     def getAllPieces(self) -> set:
         return self.white_pieces.union(self.black_pieces)

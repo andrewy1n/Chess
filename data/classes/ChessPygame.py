@@ -1,4 +1,4 @@
-from data.classes.Board import Board
+from data.classes.Board.Board import Board
 import pygame
 import sys
 

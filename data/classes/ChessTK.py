@@ -1,4 +1,5 @@
-from data.classes.Board import Board
+from data.classes.Board.Board import Board
+from data.classes.Bot import Bot
 import tkinter as tk
 from PIL import Image, ImageTk
 
@@ -9,6 +10,9 @@ class Chess:
         self.canvas = tk.Canvas(self.window, width=WIDTH, height=HEIGHT)
         self.canvas.pack()
         self.board = Board()
+        self.square_size = SQUARE_SIZE
+        
+        self.bot = Bot()
         
         # Colors
         self.light_square = "#FFCE9E"
@@ -16,8 +20,7 @@ class Chess:
         self.light_blue_highlight = '#52B2BF'
         self.dark_blue_highlight = '#0073CF'
 
-        self.square_size = SQUARE_SIZE
-
+        #Piece and Move Information
         self.piece_inital_position = None
         self.highlighted_piece = None
         self.piece_selected = None
@@ -147,6 +150,24 @@ class Chess:
         self.valid_moves.clear()
         self.canvas.delete("highlight")
 
+        if self.board.isCheckMate():
+            winner = 'White' if self.board.turn == 'b' else 'Black'
+            self.displayWinner(winner)
+            return
+        elif self.board.isStaleMate():
+            self.displayWinner("Nobody")
+            return
+   
+        self.botMove()
+    
+    def botMove(self):
+        evaluation, move = self.bot.getBestMove(self.board)
+        piece_pos = move.target_pos
+        x, y = self.squarePosToCanvasPos(piece_pos)
+        piece_image = self.pieceIDs[move.start_piece]
+        self.canvas.coords(piece_image, x, y)
+        self.movePiece(move)
+        
         if self.board.isCheckMate():
             winner = 'White' if self.board.turn == 'b' else 'Black'
             self.displayWinner(winner)

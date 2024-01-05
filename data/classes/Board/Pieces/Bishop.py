@@ -1,4 +1,4 @@
-from data.classes.Piece import Piece
+from data.classes.Board.Piece import Piece
 
 class Bishop(Piece):
     def __init__(self, color, pos) -> None:
