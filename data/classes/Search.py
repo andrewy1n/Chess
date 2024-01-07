@@ -1,6 +1,5 @@
 from data.classes.Evaluation import Evaluation
 from data.classes.Board.Board import Board
-import heapq
 import math
 
 class Search:
@@ -14,7 +13,7 @@ class Search:
         if len(moves) == 0:
             if board.isInCheck(board.turn):
                 return -math.inf, None
-            return 0, None
+            return 0, None  
 
         best_move = None
         for score, move in moves:
