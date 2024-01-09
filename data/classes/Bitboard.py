@@ -13,7 +13,6 @@ class Bitboard:
             'R' : np.uint64(0)
         }
         
-
     def initializeBB(self):
         for piece in self.pieces:
             file = piece.pos[0]
@@ -35,7 +34,3 @@ class Bitboard:
         
         for row in board:
             print(' '.join(map(str, row)))
-
-
-
-    

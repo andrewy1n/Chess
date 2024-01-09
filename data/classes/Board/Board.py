@@ -10,6 +10,7 @@ from data.classes.Board.Pieces.Queen import Queen
 from data.classes.Board.Pieces.King import King
 from data.classes.Board.Pieces.Pawn import Pawn
 from collections import defaultdict
+from data.classes.Bitboard import Bitboard
 
 class Board:
     def __init__(self, FEN_string="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") -> None:
@@ -34,6 +35,10 @@ class Board:
         self.initializeSquares()
         
         self.loadPositionfromFEN(FEN_string)
+
+        self.white_bb = Bitboard(self.piece_list.white_pieces)
+        self.black_bb = Bitboard(self.piece_list.black_pieces)
+        
 
     def loadPositionfromFEN(self, fen: str):
         pieceTypeFromSymbol = {"p": Pawn, "b": Bishop, "n": Knight, "r": Rook, "q": Queen, "k": King}
