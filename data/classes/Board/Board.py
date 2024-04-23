@@ -35,9 +35,6 @@ class Board:
         self.initializeSquares()
         
         self.loadPositionfromFEN(FEN_string)
-
-        self.white_bb = Bitboard(self.piece_list.white_pieces)
-        self.black_bb = Bitboard(self.piece_list.black_pieces)
         
 
     def loadPositionfromFEN(self, fen: str):
